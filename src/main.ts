@@ -5,7 +5,11 @@ interface Point {
     x: number, y: number
 }
 
-class Line{
+interface Command {
+    display(ctx: CanvasRenderingContext2D);
+}
+
+class Line implements Command {
     points: Point[] = []
     width: number
 
@@ -45,13 +49,33 @@ class Line{
     }
 }
 
+class Preview implements Command{
+    point: Point = Point(-1, -1);
+    active: boolean = false;
+
+    move(point: Point) {
+        this.point = point;
+        this.active = point.x >= 0;
+        dispatchEvent(drawingChanged);
+    }
+
+    display(ctx: CanvasRenderingContext2D) {
+        if (!preview.active) return;
+        
+        ctx.font = lineWidth * 8 + "px monospace";
+        ctx.fillText("+", this.point.x - lineWidth * 2, this.point.y + lineWidth * 2);
+    }
+}
+
 function Point (x: number, y: number) : Point {
     return { x: x, y: y}
 }
 
-let displayActions: Line[] = []
-let redoActions: Line[] = []
+let displayActions: Command[] = []
+let redoActions: Command[] = []
+let preview: Preview = new Preview();
 const drawingChanged: Event = new Event("drawing-changed");
+const toolMoved: Event = new Event("tool-moved");
 
 const lineWidths: number[] = [4, 6, 8]
 let lineWidthButtons: HTMLButtonElement[] = [];
@@ -59,7 +83,6 @@ let lineWidth: number = 4;
 const lineColor: string = "black";
 
 let isDrawing: boolean = false;
-let mousePos: Point = {x: 0, y: 0}
 
 // APP TITLES
 const APP_NAME = "CMPM 121 Demo 2";
@@ -130,30 +153,10 @@ redoButton.addEventListener("click", () => {
     redo();
 });
 
-// Draw on Canvas
+
 const context: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-canvas.addEventListener("mousedown", (e) => {
-    isDrawing = true;
-    displayActions.push(new Line(Point(e.offsetX, e.offsetY), lineWidth))
-    redoActions = [];
-});
-
-canvas.addEventListener("mousemove", (e) => {
-    if (!isDrawing) return;
-    displayActions.at(-1)?.push(Point(e.offsetX, e.offsetY));
-});
-
-window.addEventListener("mouseup", () => {
-    if (!isDrawing) return;
-    isDrawing = false;
-});
-
-window.addEventListener("drawing-changed", () => {
-    clearCanvas(context);
-    drawCanvas(context);
-});
-
+// Canvas Functions
 function drawCanvas(ctx: CanvasRenderingContext2D) {
     displayActions.forEach(actions => {
         actions.display(ctx);
@@ -181,3 +184,45 @@ function redo() {
     displayActions.push(redoActions.pop() as Line);
     dispatchEvent(drawingChanged);
 }
+
+// Canvas Inputs
+canvas.addEventListener("mousedown", (e) => {
+    isDrawing = true;
+    displayActions.push(new Line(Point(e.offsetX, e.offsetY), lineWidth))
+    redoActions = [];
+});
+
+canvas.addEventListener("mousemove", (e) => {
+
+    if (isDrawing) {
+        let command: Command = displayActions.at(-1) as Command;
+        if (command instanceof Line) {
+            (command as Line).push(Point(e.offsetX, e.offsetY));
+        }
+    }
+
+    preview.move(Point(e.offsetX, e.offsetY));
+    dispatchEvent(toolMoved);
+});
+
+window.addEventListener("mouseup", () => {
+    if (!isDrawing) return;
+    isDrawing = false;
+});
+
+canvas.addEventListener("mouseenter", () => {
+    preview.move(Point(-1, -1))
+});
+
+canvas.addEventListener("mouseout", () => {
+    preview.move(Point(-1, -1))
+});
+
+window.addEventListener("drawing-changed", () => {
+    clearCanvas(context);
+    drawCanvas(context);
+});
+
+window.addEventListener("tool-moved", () => {
+    preview.display(context);
+});
