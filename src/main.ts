@@ -7,9 +7,11 @@ interface Point {
 
 class Line{
     points: Point[] = []
+    width: number
 
-    constructor(point: Point) {
+    constructor(point: Point, width: number) {
         this.points = [point]
+        this.width = width;
     }
 
     push(point: Point) {
@@ -29,7 +31,7 @@ class Line{
     start(ctx: CanvasRenderingContext2D, point: Point){
         ctx.beginPath();
         ctx.strokeStyle = lineColor;
-        ctx.lineWidth = lineWidth;
+        ctx.lineWidth = this.width;
         ctx.moveTo(point.x, point.y);
     }
 
@@ -51,7 +53,9 @@ let displayActions: Line[] = []
 let redoActions: Line[] = []
 const drawingChanged: Event = new Event("drawing-changed");
 
-const lineWidth: number = 3;
+const lineWidths: number[] = [4, 6, 8]
+let lineWidthButtons: HTMLButtonElement[] = [];
+let lineWidth: number = 4;
 const lineColor: string = "black";
 
 let isDrawing: boolean = false;
@@ -73,6 +77,31 @@ const canvas: HTMLCanvasElement = document.createElement("canvas") as HTMLCanvas
 canvas.width = 256;
 canvas.height = 256;
 app.append(canvas);
+
+const brushHeader: HTMLDivElement = document.createElement("div");
+brushHeader.innerHTML = "Brushes";
+app.append(brushHeader);
+
+lineWidths.forEach(width => {
+    const widthButton: HTMLButtonElement = document.createElement("button");
+    widthButton.innerHTML = "[" + width + "]";
+    lineWidthButtons.push(widthButton);
+    app.append(widthButton);
+
+    widthButton.addEventListener("click", () => {
+        lineWidth = width;
+        lineWidthButtons.forEach(button => {
+            button.classList.remove("selectedTool");
+        });
+        widthButton.classList.add("selectedTool");
+    })
+});
+
+lineWidthButtons.at(0)?.click();
+
+const controlHeader: HTMLDivElement = document.createElement("div");
+controlHeader.innerHTML = "Controls";
+app.append(controlHeader);
 
 // Clear
 const clearButton: HTMLButtonElement = document.createElement("button");
@@ -106,7 +135,7 @@ const context: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRende
 
 canvas.addEventListener("mousedown", (e) => {
     isDrawing = true;
-    displayActions.push(new Line(Point(e.offsetX, e.offsetY)))
+    displayActions.push(new Line(Point(e.offsetX, e.offsetY), lineWidth))
     redoActions = [];
 });
 
