@@ -188,6 +188,15 @@ redoButton.addEventListener("click", () => {
     redo();
 });
 
+// Redo
+const exportButton: HTMLButtonElement = document.createElement("button");
+exportButton.innerHTML = "Export";
+app.append(exportButton);
+
+exportButton.addEventListener("click", () => {
+    exportCanvas();
+});
+
 const stickerHeader: HTMLDivElement = document.createElement("div");
 stickerHeader.innerHTML = "Stickers";
 app.append(stickerHeader);
@@ -215,7 +224,9 @@ function drawCanvas(ctx: CanvasRenderingContext2D) {
     displayActions.forEach(actions => {
         actions.display(ctx);
     });
+}
 
+function previewCanvas(ctx: CanvasRenderingContext2D) {
     if (canvasPos.x < 0) return;
     currentTool.preview(ctx, canvasPos);
 }
@@ -258,6 +269,22 @@ function addSticker(sticker: string) {
     })
 }
 
+function exportCanvas() {
+    const canvas: HTMLCanvasElement = document.createElement("canvas") as HTMLCanvasElement;
+    canvas.width = 1024;
+    canvas.height = 1024;
+
+    const context: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRenderingContext2D;
+    context.scale(4, 4);
+
+    drawCanvas(context);
+
+    const anchor = document.createElement("a");
+    anchor.href = canvas.toDataURL("image/png");
+    anchor.download = "sketchpad.png";
+    anchor.click();
+}
+
 // Canvas Inputs
 canvas.addEventListener("mousedown", (e) => {
     isDrawing = true;
@@ -298,9 +325,11 @@ canvas.addEventListener("mouseout", () => {
 window.addEventListener("drawing-changed", () => {
     clearCanvas(context);
     drawCanvas(context);
+    previewCanvas(context);
 });
 
 window.addEventListener("tool-moved", () => {
     clearCanvas(context);
     drawCanvas(context);
+    previewCanvas(context);
 });
