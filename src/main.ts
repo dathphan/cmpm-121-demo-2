@@ -192,6 +192,18 @@ const stickerHeader: HTMLDivElement = document.createElement("div");
 stickerHeader.innerHTML = "Stickers";
 app.append(stickerHeader);
 
+const addStickerButton: HTMLButtonElement = document.createElement("button");
+addStickerButton.innerHTML = "Add A Custom Sticker";
+app.append(addStickerButton);
+
+app.append(document.createElement("div"));
+
+addStickerButton.addEventListener("click", () => {
+    const sticker: string = prompt("Enter Custom Sticker","🐺") as string;
+    if (sticker == null) return;
+    addSticker(sticker);
+});
+
 stickers.forEach(sticker => {
     addSticker(sticker);
 });
