@@ -9,7 +9,8 @@ function Point (x: number, y: number) : Point {
     return { x: x, y: y}
 }
 
-let userPoints: Point[] = []
+let displayActions: Point[] = []
+let redoStack: Point[] = []
 const drawingChanged: Event = new Event("drawing-changed");
 
 const lineWidth: number = 3;
@@ -36,22 +37,30 @@ canvas.height = 256;
 app.append(canvas);
 
 // Clear
-const clear: HTMLButtonElement = document.createElement("button");
-clear.innerHTML = "Clear";
-app.append(clear);
+const clearButton: HTMLButtonElement = document.createElement("button");
+clearButton.innerHTML = "Clear";
+app.append(clearButton);
 
-clear.addEventListener("click", () => {
-    clearCanvas();
+clearButton.addEventListener("click", () => {
+    clear();
 })
 
-// Debug
-const debug: HTMLButtonElement = document.createElement("button");
-debug.innerHTML = "DEBUG";
-app.append(debug);
+// Undo
+const undoButton: HTMLButtonElement = document.createElement("button");
+undoButton.innerHTML = "Undo";
+app.append(undoButton);
 
-debug.addEventListener("click", () => {
-    clearCanvas();
-    drawPoints();
+undoButton.addEventListener("click", () => {
+    undo();
+});
+
+// Redo
+const redoButton: HTMLButtonElement = document.createElement("button");
+redoButton.innerHTML = "Redo";
+app.append(redoButton);
+
+redoButton.addEventListener("click", () => {
+    redo();
 });
 
 // Draw on Canvas
@@ -75,6 +84,9 @@ function endLine(){
 
 canvas.addEventListener("mousedown", (e) => {
     isDrawing = true;
+    if (displayActions.length > 0 && (displayActions.at(-1) as Point).x >= 0) {
+        addPoint(-1, -1);
+    }
     addPoint(e.offsetX, e.offsetY);
 });
 
@@ -84,7 +96,8 @@ canvas.addEventListener("mousemove", (e) => {
 });
 
 window.addEventListener("mouseup", () => {
-    userPoints.push(Point(-1, -1));
+    if (!isDrawing) return;
+    addPoint(-1, -1);
     isDrawing = false;
 });
 
@@ -94,13 +107,14 @@ window.addEventListener("drawing-changed", () => {
 });
 
 function addPoint(x: number, y: number) {
-    userPoints.push(Point(x, y));
+    displayActions.push(Point(x, y));
+    redoStack = [];
     dispatchEvent(drawingChanged);
 }
 
 function drawPoints() : void {
     let newLine : boolean = true;
-    userPoints.forEach(point => {
+    displayActions.forEach(point => {
         if (point.x < 0) {
             endLine();
             newLine = true;
@@ -115,6 +129,33 @@ function drawPoints() : void {
     });
 }
 
+function clear() {
+    clearCanvas();
+    while (displayActions.length > 0) {
+        redoStack.push(displayActions.pop() as Point);
+    }
+}
+
 function clearCanvas(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function undo() {
+    if (displayActions.length < 1) return;
+    redoStack.push(displayActions.pop() as Point);
+    dispatchEvent(drawingChanged);
+
+    if ((redoStack.at(-1) as Point).x < 0) {
+        undo();
+    }
+}
+
+function redo() {
+    if (redoStack.length < 1) return;
+    displayActions.push(redoStack.pop() as Point);
+    dispatchEvent(drawingChanged);
+    
+    if ((displayActions.at(-1) as Point).x < 0) {
+        redo();
+    }
 }
