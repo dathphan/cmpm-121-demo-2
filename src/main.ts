@@ -14,12 +14,12 @@ interface Command {
     mouseUp(ctx: CanvasRenderingContext2D, point: Point);
 }
 
-class Line implements Command {
+class Brush implements Command {
     points: Point[] = []
     size: number
 
     cleanCopy(): Command {
-        return new Line(this.size);
+        return new Brush(this.size);
     }
 
     constructor(size: number) {
@@ -111,7 +111,7 @@ let canvasPos: Point = Point(-1, -1);
 const drawingChanged: Event = new Event("drawing-changed");
 const toolMoved: Event = new Event("tool-moved");
 
-const brushSizes: number[] = [4, 6, 8]
+const brushSizes: number[] = [3, 5, 8]
 const stickers: string[] = ["🐯", "🐻", "🦝"]
 let toolButtons: HTMLButtonElement[] = [];
 const lineColor: string = "black";
@@ -126,7 +126,7 @@ document.title = APP_NAME;
 app.innerHTML = APP_NAME;
 
 const title = document.createElement("h1");
-title.textContent = "[APP_TITLE]"
+title.textContent = "Sticker Space"
 app.append(title);
 
 // CANVAS
@@ -146,7 +146,7 @@ brushSizes.forEach(size => {
     app.append(sizeButton);
 
     sizeButton.addEventListener("click", () => {
-        currentTool = new Line(size);
+        currentTool = new Brush(size);
 
         toolButtons.forEach(button => {
             button.classList.remove("selectedTool");
@@ -243,19 +243,19 @@ function clearCanvas(ctx: CanvasRenderingContext2D){
 
 function undo() {
     if (displayActions.length < 1) return;
-    redoActions.push(displayActions.pop() as Line);
+    redoActions.push(displayActions.pop() as Command);
     dispatchEvent(drawingChanged);
 }
 
 function redo() {
     if (redoActions.length < 1) return;
-    displayActions.push(redoActions.pop() as Line);
+    displayActions.push(redoActions.pop() as Command);
     dispatchEvent(drawingChanged);
 }
 
 function addSticker(sticker: string) {
     const stickerButton: HTMLButtonElement = document.createElement("button");
-    stickerButton.innerHTML = "[" + sticker + "]";
+    stickerButton.innerHTML = sticker;
     toolButtons.push(stickerButton);
     app.append(stickerButton);
 
