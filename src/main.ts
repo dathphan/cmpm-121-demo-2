@@ -17,6 +17,7 @@ interface Command {
 class Brush implements Command {
     points: Point[] = []
     size: number
+    color: number[] = [0, 0, 0];
 
     cleanCopy(): Command {
         return new Brush(this.size);
@@ -27,6 +28,10 @@ class Brush implements Command {
     }
 
     mouseDown(ctx: CanvasRenderingContext2D, point: Point){
+        if (currentTool == this) {
+            this.color = lineColor.slice();
+        }
+
         this.drag(ctx, point);
     };
     drag(ctx: CanvasRenderingContext2D, point: Point) {
@@ -38,6 +43,7 @@ class Brush implements Command {
     preview(ctx: CanvasRenderingContext2D, point: Point) {
         ctx.font = this.size * 8 + "px monospace";
         ctx.fillText("+", point.x - this.size * 2, point.y + this.size * 2);
+        ctx.fillStyle = `rgb(${lineColor[0]}, ${lineColor[1]}, ${lineColor[2]})`;
     }
 
     display(ctx: CanvasRenderingContext2D) {
@@ -51,7 +57,7 @@ class Brush implements Command {
 
     start(ctx: CanvasRenderingContext2D, point: Point){
         ctx.beginPath();
-        ctx.strokeStyle = lineColor;
+        ctx.strokeStyle = `rgb(${this.color[0]}, ${this.color[1]}, ${this.color[2]})`;
         ctx.lineWidth = this.size;
         ctx.moveTo(point.x, point.y);
     }
@@ -114,7 +120,7 @@ const toolMoved: Event = new Event("tool-moved");
 const brushSizes: number[] = [3, 5, 8]
 const stickers: string[] = ["🐯", "🐻", "🦝"]
 let toolButtons: HTMLButtonElement[] = [];
-const lineColor: string = "black";
+const lineColor: number[] = [0, 0, 0];
 
 let isDrawing: boolean = false;
 
@@ -156,6 +162,33 @@ brushSizes.forEach(size => {
 });
 
 toolButtons.at(0)?.click();
+
+const rgb = ["R", "G", "B"];
+const hexLabel = document.createElement("div");
+for (let i = 0; i < 3; i++) {
+    app.append(document.createElement("div"));
+
+    const label: HTMLSpanElement = document.createElement("span");
+    label.textContent = rgb[i];
+    label.style.position = "relative";
+    label.style.marginRight = "4px";
+    label.style.top = "-6px";
+    app.append(label);
+    
+    const colorSlider: HTMLInputElement = document.createElement("input");
+    colorSlider.type = "range";
+    colorSlider.min = "0";
+    colorSlider.max = "255";
+    colorSlider.value = "0";
+    app.append(colorSlider);
+    
+    colorSlider.addEventListener("input", () => {
+        lineColor[i] = parseInt(colorSlider.value);
+        hexLabel.innerHTML = `Color: ${lineColor[0]}, ${lineColor[1]}, ${lineColor[2]}`;
+    });
+}
+hexLabel.innerHTML = `rgb()`
+app.append(hexLabel);
 
 const controlHeader: HTMLDivElement = document.createElement("div");
 controlHeader.innerHTML = "Controls";
@@ -257,6 +290,7 @@ function addSticker(sticker: string) {
     const stickerButton: HTMLButtonElement = document.createElement("button");
     stickerButton.innerHTML = sticker;
     toolButtons.push(stickerButton);
+    stickerButton.classList.add("stickerButton");
     app.append(stickerButton);
 
     stickerButton.addEventListener("click", () => {
