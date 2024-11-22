@@ -356,14 +356,11 @@ canvas.addEventListener("mouseout", () => {
     dispatchEvent(toolMoved);
 });
 
-window.addEventListener("drawing-changed", () => {
-    clearCanvas(context);
-    drawCanvas(context);
-    previewCanvas(context);
-});
+function refreshCanvas(ctx: CanvasRenderingContext2D) {
+    clearCanvas(ctx); // Clears previous drawings
+    drawCanvas(ctx);  // Draws committed actions
+    previewCanvas(ctx); // Previews ongoing tool actions
+}
 
-window.addEventListener("tool-moved", () => {
-    clearCanvas(context);
-    drawCanvas(context);
-    previewCanvas(context);
-});
+window.addEventListener("drawing-changed", () => refreshCanvas(context));
+window.addEventListener("tool-moved", () => refreshCanvas(context));
