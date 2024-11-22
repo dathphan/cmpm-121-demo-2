@@ -2,21 +2,22 @@ import "./style.css";
 
 // Variables
 interface Point {
-    x: number, y: number
+    x: number;
+    y: number;
 }
 
 interface Command {
     cleanCopy(): Command;
     display(ctx: CanvasRenderingContext2D);
-    preview(ctx: CanvasRenderingContext2D, point: Point);   // I realized I wasn't suppose to do this, but I think the code is cleaner as a result
+    preview(ctx: CanvasRenderingContext2D, point: Point); // I realized I wasn't suppose to do this, but I think the code is cleaner as a result
     mouseDown(ctx: CanvasRenderingContext2D, point: Point);
     drag(ctx: CanvasRenderingContext2D, point: Point);
     mouseUp(ctx: CanvasRenderingContext2D, point: Point);
 }
 
 class Brush implements Command {
-    points: Point[] = []
-    size: number
+    points: Point[] = [];
+    size: number;
     color: number[] = [0, 0, 0];
 
     cleanCopy(): Command {
@@ -27,53 +28,57 @@ class Brush implements Command {
         this.size = size;
     }
 
-    mouseDown(ctx: CanvasRenderingContext2D, point: Point){
+    mouseDown(ctx: CanvasRenderingContext2D, point: Point) {
         if (currentTool == this) {
             this.color = lineColor.slice();
         }
 
         this.drag(ctx, point);
-    };
+    }
     drag(ctx: CanvasRenderingContext2D, point: Point) {
         this.points.push(point);
         dispatchEvent(drawingChanged);
     }
-    mouseUp(_ctx: CanvasRenderingContext2D, _point: Point){};
+    mouseUp(_ctx: CanvasRenderingContext2D, _point: Point) {}
 
     preview(ctx: CanvasRenderingContext2D, point: Point) {
         ctx.font = this.size * 8 + "px monospace";
         ctx.fillText("+", point.x - this.size * 2, point.y + this.size * 2);
-        ctx.fillStyle = `rgb(${lineColor[0]}, ${lineColor[1]}, ${lineColor[2]})`;
+        ctx.fillStyle = `rgb(${lineColor[0]}, ${lineColor[1]}, ${
+            lineColor[2]
+        })`;
     }
 
     display(ctx: CanvasRenderingContext2D) {
         if (this.points.length < 1) return;
 
         this.start(ctx, this.points.at(0) as Point);
-        this.points.forEach(point => {
+        this.points.forEach((point) => {
             this.continue(ctx, point);
         });
     }
 
-    start(ctx: CanvasRenderingContext2D, point: Point){
+    start(ctx: CanvasRenderingContext2D, point: Point) {
         ctx.beginPath();
-        ctx.strokeStyle = `rgb(${this.color[0]}, ${this.color[1]}, ${this.color[2]})`;
+        ctx.strokeStyle = `rgb(${this.color[0]}, ${this.color[1]}, ${
+            this.color[2]
+        })`;
         ctx.lineWidth = this.size;
         ctx.moveTo(point.x, point.y);
     }
 
-    continue(ctx: CanvasRenderingContext2D, point: Point){
+    continue(ctx: CanvasRenderingContext2D, point: Point) {
         ctx.lineTo(point.x, point.y);
         ctx.stroke();
     }
 
     end(ctx: CanvasRenderingContext2D) {
-        ctx.closePath()
+        ctx.closePath();
     }
 }
 
 class Sticker implements Command {
-    sticker: string = ""
+    sticker: string = "";
     point: Point = Point(-1, -1);
     size: number = 6;
 
@@ -85,18 +90,22 @@ class Sticker implements Command {
         this.sticker = sticker;
     }
 
-    mouseDown(ctx: CanvasRenderingContext2D, point: Point){
+    mouseDown(ctx: CanvasRenderingContext2D, point: Point) {
         this.drag(ctx, point);
-    };
+    }
     drag(ctx: CanvasRenderingContext2D, point: Point) {
         this.point = point;
         dispatchEvent(drawingChanged);
     }
-    mouseUp(ctx: CanvasRenderingContext2D, point: Point){};
-    
+    mouseUp(ctx: CanvasRenderingContext2D, point: Point) {}
+
     preview(ctx: CanvasRenderingContext2D, point: Point) {
         ctx.font = this.size * 8 + "px monospace";
-        ctx.fillText(this.sticker, point.x - this.size * 5.3, point.y + this.size * 2);
+        ctx.fillText(
+            this.sticker,
+            point.x - this.size * 5.3,
+            point.y + this.size * 2,
+        );
     }
 
     display(ctx: CanvasRenderingContext2D) {
@@ -105,20 +114,20 @@ class Sticker implements Command {
     }
 }
 
-function Point (x: number, y: number) : Point {
-    return { x: x, y: y}
+function Point(x: number, y: number): Point {
+    return { x: x, y: y };
 }
 
 let currentTool: Command;
 
-let displayActions: Command[] = []
-let redoActions: Command[] = []
+let displayActions: Command[] = [];
+let redoActions: Command[] = [];
 let canvasPos: Point = Point(-1, -1);
 const drawingChanged: Event = new Event("drawing-changed");
 const toolMoved: Event = new Event("tool-moved");
 
-const brushSizes: number[] = [3, 5, 8]
-const stickers: string[] = ["🐯", "🐻", "🦝"]
+const brushSizes: number[] = [3, 5, 8];
+const stickers: string[] = ["🐯", "🐻", "🦝"];
 let toolButtons: HTMLButtonElement[] = [];
 const lineColor: number[] = [0, 0, 0];
 
@@ -132,11 +141,13 @@ document.title = APP_NAME;
 app.innerHTML = APP_NAME;
 
 const title = document.createElement("h1");
-title.textContent = "Sticker Space"
+title.textContent = "Sticker Space";
 app.append(title);
 
 // CANVAS
-const canvas: HTMLCanvasElement = document.createElement("canvas") as HTMLCanvasElement;
+const canvas: HTMLCanvasElement = document.createElement(
+    "canvas",
+) as HTMLCanvasElement;
 canvas.width = 256;
 canvas.height = 256;
 app.append(canvas);
@@ -145,7 +156,7 @@ const brushHeader: HTMLDivElement = document.createElement("div");
 brushHeader.innerHTML = "Brushes";
 app.append(brushHeader);
 
-brushSizes.forEach(size => {
+brushSizes.forEach((size) => {
     const sizeButton: HTMLButtonElement = document.createElement("button");
     sizeButton.innerHTML = "[" + size + "]";
     toolButtons.push(sizeButton);
@@ -154,12 +165,23 @@ brushSizes.forEach(size => {
     sizeButton.addEventListener("click", () => {
         currentTool = new Brush(size);
 
-        toolButtons.forEach(button => {
+        toolButtons.forEach((button) => {
             button.classList.remove("selectedTool");
         });
         sizeButton.classList.add("selectedTool");
-    })
+    });
 });
+
+// created box to display selected color
+const colorBox: HTMLDivElement = document.createElement("div");
+colorBox.style.width = "20px";
+colorBox.style.height = "20px";
+colorBox.style.border = "1px solid black";
+colorBox.style.display = "inline-block";
+colorBox.style.marginLeft = "10px";
+colorBox.style.verticalAlign = "middle";
+colorBox.style.backgroundColor = "black";
+app.append(colorBox);
 
 toolButtons.at(0)?.click();
 
@@ -174,20 +196,25 @@ for (let i = 0; i < 3; i++) {
     label.style.marginRight = "4px";
     label.style.top = "-6px";
     app.append(label);
-    
+
     const colorSlider: HTMLInputElement = document.createElement("input");
     colorSlider.type = "range";
     colorSlider.min = "0";
     colorSlider.max = "255";
     colorSlider.value = "0";
     app.append(colorSlider);
-    
+
     colorSlider.addEventListener("input", () => {
         lineColor[i] = parseInt(colorSlider.value);
-        hexLabel.innerHTML = `Color: ${lineColor[0]}, ${lineColor[1]}, ${lineColor[2]}`;
+        hexLabel.innerHTML = `Color: ${lineColor[0]}, ${lineColor[1]}, ${
+            lineColor[2]
+        }`;
+        colorBox.style.backgroundColor = `rgb(${lineColor[0]}, ${
+            lineColor[1]
+        }, ${lineColor[2]})`;
     });
 }
-hexLabel.innerHTML = `rgb()`
+hexLabel.innerHTML = `rgb(0, 0, 0)`; // updated initial color label as well!
 app.append(hexLabel);
 
 const controlHeader: HTMLDivElement = document.createElement("div");
@@ -201,7 +228,7 @@ app.append(clearButton);
 
 clearButton.addEventListener("click", () => {
     clear(context);
-})
+});
 
 // Undo
 const undoButton: HTMLButtonElement = document.createElement("button");
@@ -241,20 +268,22 @@ app.append(addStickerButton);
 app.append(document.createElement("div"));
 
 addStickerButton.addEventListener("click", () => {
-    const sticker: string = prompt("Enter Custom Sticker","🐺") as string;
+    const sticker: string = prompt("Enter Custom Sticker", "🐺") as string;
     if (sticker == null) return;
     addSticker(sticker);
 });
 
-stickers.forEach(sticker => {
+stickers.forEach((sticker) => {
     addSticker(sticker);
 });
 
-const context: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRenderingContext2D;
+const context: CanvasRenderingContext2D = canvas.getContext(
+    "2d",
+) as CanvasRenderingContext2D;
 
 // Canvas Functions
 function drawCanvas(ctx: CanvasRenderingContext2D) {
-    displayActions.forEach(actions => {
+    displayActions.forEach((actions) => {
         actions.display(ctx);
     });
 }
@@ -270,7 +299,7 @@ function clear(ctx: CanvasRenderingContext2D) {
     redoActions = [];
 }
 
-function clearCanvas(ctx: CanvasRenderingContext2D){
+function clearCanvas(ctx: CanvasRenderingContext2D) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
@@ -296,19 +325,23 @@ function addSticker(sticker: string) {
     stickerButton.addEventListener("click", () => {
         currentTool = new Sticker(sticker);
 
-        toolButtons.forEach(button => {
+        toolButtons.forEach((button) => {
             button.classList.remove("selectedTool");
         });
         stickerButton.classList.add("selectedTool");
-    })
+    });
 }
 
 function exportCanvas() {
-    const canvas: HTMLCanvasElement = document.createElement("canvas") as HTMLCanvasElement;
+    const canvas: HTMLCanvasElement = document.createElement(
+        "canvas",
+    ) as HTMLCanvasElement;
     canvas.width = 1024;
     canvas.height = 1024;
 
-    const context: CanvasRenderingContext2D = canvas.getContext("2d") as CanvasRenderingContext2D;
+    const context: CanvasRenderingContext2D = canvas.getContext(
+        "2d",
+    ) as CanvasRenderingContext2D;
     context.scale(4, 4);
 
     drawCanvas(context);
@@ -358,7 +391,7 @@ canvas.addEventListener("mouseout", () => {
 
 function refreshCanvas(ctx: CanvasRenderingContext2D) {
     clearCanvas(ctx); // Clears previous drawings
-    drawCanvas(ctx);  // Draws committed actions
+    drawCanvas(ctx); // Draws committed actions
     previewCanvas(ctx); // Previews ongoing tool actions
 }
 
